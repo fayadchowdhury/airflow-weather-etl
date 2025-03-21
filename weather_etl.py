@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
 from airflow.providers.http.hooks.http import HttpHook # Import HttpHook for HTTP requests
+from airflow.providers.postgres.hooks.postgres import PostgresHook # Import PostgresHook for database connections
 
 import pytz
 
@@ -28,7 +29,7 @@ POSTGRES_CONNECTION_ID = "postgres"
 
 @dag(
         default_args=default_args,
-        dag_id='weather_etl_alpha_1',
+        dag_id='weather_etl_test',
         description='A simple ETL process for weather data from OpenMeteo',
         schedule_interval=timedelta(minutes=15),
         start_date=datetime(2025, 3, 20, 17, 0, 0),
@@ -91,7 +92,38 @@ def weather_etl_dag():
         Save cleaned and transformed data to Postgres database
         """
         print("Saving data")
-        print(cleaned_data)
+        pg_hook = PostgresHook(postgres_conn_id=POSTGRES_CONNECTION_ID)
+        connection = pg_hook.get_conn()
+        cursor = connection.cursor()
+
+        # Create table if it doesn't exist
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weather_data (
+            latitude FLOAT,
+            longitude FLOAT,
+            data_time TIMESTAMP,
+            fetch_time TIMESTAMP,
+            temperature FLOAT,
+            precipitation_probability FLOAT,
+            relative_humidity FLOAT
+        );
+        """)
+
+        # Insert cleaned data into the table
+        cursor.execute("""
+        INSERT INTO weather_data VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            cleaned_data['latitude'],
+            cleaned_data['longitude'],
+            cleaned_data['data_time'],
+            cleaned_data['fetch_time'],
+            cleaned_data['temperature'],
+            cleaned_data['precipitation_probability'],
+            cleaned_data['relative_humidity']
+        ))
+
+        connection.commit()
+        cursor.close()
 
     # Flow of tasks
     fetched_data = extract_weather_data()
