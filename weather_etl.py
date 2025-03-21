@@ -29,7 +29,7 @@ POSTGRES_CONNECTION_ID = "postgres"
 
 @dag(
         default_args=default_args,
-        dag_id='weather_etl_test',
+        dag_id='weather_etl',
         description='A simple ETL process for weather data from OpenMeteo',
         schedule_interval=timedelta(minutes=15),
         start_date=datetime(2025, 3, 20, 17, 0, 0),
