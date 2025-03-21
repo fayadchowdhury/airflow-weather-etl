@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.providers.http.hooks.http import HttpHook # Import HttpHook for HTTP requests
 
+import pytz
 
 default_args = {
     'owner': 'fayad',
@@ -44,9 +45,11 @@ def weather_etl_dag():
         try:
             http_hook = HttpHook(http_conn_id=API_CONNECTION_ID, method="GET")
             endpoint = "v1/forecast" # Endpoint for the OpenMeteo API
-            response = http_hook.run(endpoint, params=params)
-            print(response)
-            return response.json()
+            response = http_hook.run(endpoint, data=params) # Pass the query parameters as data
+            print(f"Hit URL: {response.request.url}")
+            data = response.json()
+            print(f"Successfully fetched data: {data}")
+            return data
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             return None
@@ -61,7 +64,9 @@ def weather_etl_dag():
             latitude = data["latitude"]
             longitude = data["longitude"]
             data_time = data["current"]["time"]
-            fetch_time = datetime.now().strftime("%Y-%m-%dT%H:%M")
+            # For Vancouver time
+            utc_7 = pytz.timezone("Etc/GMT+7")
+            fetch_time = datetime.now(utc_7).strftime("%Y-%m-%dT%H:%M")
             temperature = data["current"]["temperature_2m"]
             precipitation_probability = data["current"]["precipitation_probability"]
             relative_humidity = data["current"]["relative_humidity_2m"]
