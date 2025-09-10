@@ -1,5 +1,10 @@
 A project to experiment with ETL pipelines in Apache Airflow using weather data from OpenMeteo.
 
+### TL;DR
+- Airflow DAG fetching data from OpenMeteo API, transforming and pushing to Postgres in ETL pipeline
+- Airflow and Postgres running in Docker containers for concern isolation
+- TaskFlow API leveraged for clean, readable code
+
 ## Project Overview
 
 This project explores ETL on weather data using Apache Airflow to orchestrate the different tasks. The basic setup includes:
